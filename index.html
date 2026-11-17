@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Shifts">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Shift Pay Tracker</title>
+<style>
+:root{--bg:#f2f4f3;--card:#fff;--ink:#1c2430;--mute:#66707d;--line:#dde2e0;--acc:#0f766e;--acc-ink:#fff;--sun:#fdf1ee;--hol:#c2410c;--r:10px;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14181d;--card:#1d232b;--ink:#e8ecef;--mute:#9aa4af;--line:#303842;--acc:#2dd4bf;--acc-ink:#0b1b19;--sun:#2a2020;--hol:#fb923c;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#14181d;--card:#1d232b;--ink:#e8ecef;--mute:#9aa4af;--line:#303842;--acc:#2dd4bf;--acc-ink:#0b1b19;--sun:#2a2020;--hol:#fb923c;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:4px 0 14px}
+h2{font-size:1rem;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 14px;min-height:40px;cursor:pointer}
+button.p{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+button.d{color:var(--hol)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px;min-height:40px;width:100%;font-size:16px}
+input[type=checkbox],input[type=radio]{width:auto}
+input[type=color]{padding:2px;height:36px}
+label{display:block;font-size:.85rem;color:var(--mute)}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sp{justify-content:space-between}
+.sum{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.sum div{border-left:3px solid var(--line);padding-left:10px}
+.sum b{display:block;font-size:1.2rem}
+.sum span{font-size:.8rem;color:var(--mute)}
+.sum .big{border-color:var(--acc)}
+.sum .big b{font-size:1.6rem;color:var(--acc)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{font-size:.75rem;color:var(--mute);text-align:center;padding-bottom:2px}
+.day{min-height:72px;border:1px solid var(--line);border-radius:8px;padding:4px;text-align:left;background:var(--card);display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.day.off{visibility:hidden}
+.day.sun{background:var(--sun)}
+.day.today{box-shadow:inset 0 0 0 2px var(--acc)}
+.day .n{font-size:.8rem;color:var(--mute)}
+.day.hol .n{color:var(--hol);font-weight:700}
+.chip{font-weight:700;font-size:.85rem;border-radius:5px;padding:1px 6px;color:#fff;align-self:flex-start}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+.list{display:grid;gap:6px;margin-bottom:12px}
+.list .row{border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+dialog{border:1px solid var(--line);border-radius:var(--r);background:var(--card);color:var(--ink);width:min(380px,92vw);padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+.opt{display:flex;gap:8px;align-items:center;padding:6px 0;color:var(--ink);font-size:.95rem}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button[aria-selected=true]{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.note{font-size:.8rem;color:var(--mute);margin:8px 0 0}
+@media(max-width:560px){.cal{gap:3px}.day{min-height:60px;padding:3px;border-radius:6px}.sum{grid-template-columns:repeat(2,1fr)}.sum .big{grid-column:1/-1}.tabs button{flex:1}.chip{font-size:.72rem;padding:0 4px}main{padding:10px}}
+</style>
+</head>
+<body>
+<main>
+<div class="row sp"><h1>Shift Pay Tracker</h1><button id="theme" aria-label="Change theme"></button></div>
+
+<section class="card">
+  <div class="row sp" style="margin-bottom:12px">
+    <button id="prev" aria-label="Previous month">‹</button>
+    <h2 id="mt" style="margin:0"></h2>
+    <button id="next" aria-label="Next month">›</button>
+  </div>
+  <div class="sum" id="sum"></div>
+</section>
+
+<section class="card">
+  <div class="cal" id="cal"></div>
+  <p class="note">Tap a day to assign a shift or mark a public holiday. Sundays are tinted.</p>
+</section>
+
+<section class="card">
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-t="shifts">Shift templates</button>
+    <button role="tab" aria-selected="false" data-t="settings">Pay settings</button>
+    <button role="tab" aria-selected="false" data-t="backup">Backup</button>
+  </div>
+
+  <div id="t-shifts">
+    <div class="list" id="shiftList"></div>
+    <form id="sf" class="grid">
+      <div><label for="sn">Name / code</label><input id="sn" required maxlength="8"></div>
+      <div><label for="sc">Color</label><input id="sc" type="color" value="#0f766e"></div>
+      <div><label for="ss">Start</label><input id="ss" type="time" required></div>
+      <div><label for="se">End</label><input id="se" type="time" required></div>
+      <div><label for="sb">Break (min)</label><input id="sb" type="number" min="0" max="600" value="30" required></div>
+      <div class="row" style="align-items:end"><button class="p" type="submit" id="sbtn">Add shift</button><button type="button" id="scancel" hidden>Cancel</button></div>
+    </form>
+  </div>
+
+  <div id="t-settings" hidden>
+    <div class="grid">
+      <div><label for="r">Hourly rate (MKD)</label><input id="r" type="number" min="0" step="0.01"></div>
+      <div><label for="rn">Night bonus % (22:00–06:00)</label><input id="rn" type="number" min="0" step="0.5"></div>
+      <div><label for="rs">Sunday bonus %</label><input id="rs" type="number" min="0" step="0.5"></div>
+      <div><label for="rh">Public holiday bonus %</label><input id="rh" type="number" min="0" step="0.5"></div>
+      <div><label for="bk">Breaks</label>
+        <select id="bk"><option value="paid">Paid (counted as work time)</option><option value="unpaid">Unpaid (deducted)</option></select></div>
+      <div><label for="bp">Unpaid break position</label>
+        <select id="bp"><option value="middle">Middle of shift</option><option value="start">Start of shift</option><option value="end">End of shift</option></select></div>
+    </div>
+    <p class="note">Under the Labour Relations Law (Art. 132) the daily break counts as working time and is paid, so breaks are paid by default. Sunday and holiday bonuses follow the real calendar date of each hour, so a shift crossing midnight changes day at 00:00. To pay a holiday bonus for hours after midnight, mark the holiday on its own date, even if you have no shift starting that day. Bonuses stack additively. Example: night + holiday = 35% + 250% = 285% on top of base pay. Salary shown is gross: hours × rate + bonuses.</p>
+  </div>
+
+  <div id="t-backup" hidden>
+    <div class="row">
+      <button class="p" id="exp">Export JSON</button>
+      <button id="imp">Import JSON</button>
+      <input type="file" id="file" accept="application/json,.json" hidden>
+    </div>
+    <p class="note">Data is saved automatically in this browser. Use export to move it to another device. Importing replaces current data.</p>
+  </div>
+</section>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog" id="df">
+    <h2 id="dt"></h2>
+    <div id="dopts"></div>
+    <label class="opt" style="margin-top:6px;border-top:1px solid var(--line);padding-top:10px"><input type="checkbox" id="dh"> Public holiday</label>
+    <div class="row sp" style="margin-top:12px"><button type="button" id="dc">Cancel</button><button class="p" type="submit" value="ok">Save day</button></div>
+  </form>
+</dialog>
+
+<script>
+const KEY = 'shiftTrackerV1';
+const $ = id => document.getElementById(id);
+const defaults = () => ({
+  settings: { rate: 250, night: 35, sun: 50, hol: 250, breakPos: 'middle', breakPaid: true },
+  shifts: [
+    { id: 's1',  name: '1',  color: '#d97706', start: '05:00', end: '11:00', brk: 0 },
+    { id: 's3',  name: '3',  color: '#2563eb', start: '17:00', end: '00:30', brk: 30 },
+    { id: 's3c', name: '3c', color: '#7c3aed', start: '21:00', end: '04:00', brk: 30 },
+    { id: 's4',  name: '4',  color: '#be123c', start: '22:00', end: '05:00', brk: 30 }
+  ],
+  days: {}
+});
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY)) || defaults(); } catch (e) { S = defaults(); }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const key = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const money = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const hrs = m => (m / 60).toLocaleString('en-US', { maximumFractionDigits: 2 });
+let view = new Date(); view.setDate(1);
+
+/* Minute-by-minute engine */
+function calc(shift, date) {
+  const st = S.settings, s = toMin(shift.start);
+  const unpaid = st.breakPaid === false;
+  let e = toMin(shift.end); if (e <= s) e += 1440;
+  const total = e - s, brk = unpaid ? Math.min(shift.brk, total) : 0;
+  const bs = st.breakPos === 'start' ? s : st.breakPos === 'end' ? e - brk : s + Math.floor((total - brk) / 2);
+  const r = { paid: 0, night: 0, sun: 0, hol: 0, bonus: 0 };
+  for (let m = s; m < e; m++) {
+    if (m >= bs && m < bs + brk) continue;
+    const mod = m % 1440;
+    const d = new Date(date); d.setDate(d.getDate() + Math.floor(m / 1440));
+    const night = mod < 360 || mod >= 1320;
+    const sun = d.getDay() === 0;
+    const hol = !!(S.days[key(d)] && S.days[key(d)].holiday);
+    r.paid++; if (night) r.night++; if (sun) r.sun++; if (hol) r.hol++;
+    r.bonus += st.rate / 60 * ((night ? st.night : 0) + (sun ? st.sun : 0) + (hol ? st.hol : 0)) / 100;
+  }
+  return r;
+}
+
+function render() {
+  const y = view.getFullYear(), mo = view.getMonth();
+  $('mt').textContent = view.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+  const first = new Date(y, mo, 1), count = new Date(y, mo + 1, 0).getDate();
+  const lead = (first.getDay() + 6) % 7, todayK = key(new Date());
+  const T = { paid: 0, night: 0, sun: 0, hol: 0, bonus: 0 };
+  let h = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `<div class="dow">${d}</div>`).join('');
+  for (let i = 0; i < lead; i++) h += '<div class="day off"></div>';
+  for (let d = 1; d <= count; d++) {
+    const date = new Date(y, mo, d), k = key(date), e = S.days[k] || {};
+    const sh = S.shifts.find(x => x.id === e.shift);
+    if (sh) { const c = calc(sh, date); for (const f in T) T[f] += c[f]; }
+    const cls = ['day', date.getDay() === 0 ? 'sun' : '', e.holiday ? 'hol' : '', k === todayK ? 'today' : ''].join(' ');
+    h += `<button class="${cls}" data-k="${k}" aria-label="${date.toDateString()}${sh ? ', shift ' + esc(sh.name) : ''}${e.holiday ? ', holiday' : ''}">
+      <span class="n">${d}${e.holiday ? ' ★' : ''}</span>${sh ? `<span class="chip" style="background:${esc(sh.color)}">${esc(sh.name)}</span>` : ''}</button>`;
+  }
+  $('cal').innerHTML = h;
+  const base = T.paid / 60 * S.settings.rate;
+  $('sum').innerHTML = [
+    [hrs(T.paid), 'Total hours'], [hrs(T.night), 'Night hours'], [hrs(T.sun), 'Sunday hours'], [hrs(T.hol), 'Holiday hours'],
+    [money(T.bonus), 'Bonus (MKD)'], [money(base + T.bonus), 'Estimated salary (MKD)', 'big']
+  ].map(([v, l, c]) => `<div class="${c || ''}"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('shiftList').innerHTML = S.shifts.length ? S.shifts.map(s => `<div class="row sp">
+    <span><span class="sw" style="background:${esc(s.color)}"></span><b>${esc(s.name)}</b> &nbsp;${s.start}–${s.end}, break ${s.brk} min</span>
+    <span class="row"><button data-edit="${s.id}">Edit</button><button class="d" data-del="${s.id}">Delete</button></span></div>`).join('')
+    : '<p class="note">No shifts yet. Add one below.</p>';
+  const st = S.settings;
+  [['r','rate'],['rn','night'],['rs','sun'],['rh','hol'],['bp','breakPos']].forEach(([id, f]) => { if (document.activeElement !== $(id)) $(id).value = st[f]; });
+  $('bk').value = st.breakPaid === false ? 'unpaid' : 'paid'; $('bp').disabled = st.breakPaid !== false;
+}
+
+/* Calendar + day dialog */
+let activeKey = null;
+$('cal').addEventListener('click', ev => {
+  const b = ev.target.closest('.day[data-k]'); if (!b) return;
+  activeKey = b.dataset.k;
+  const e = S.days[activeKey] || {};
+  const dt = new Date(activeKey + 'T00:00:00');
+  $('dt').textContent = dt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('dopts').innerHTML = [`<label class="opt"><input type="radio" name="sh" value="" ${!e.shift ? 'checked' : ''}> No shift (day off)</label>`]
+    .concat(S.shifts.map(s => `<label class="opt"><input type="radio" name="sh" value="${s.id}" ${e.shift === s.id ? 'checked' : ''}>
+      <span class="sw" style="background:${esc(s.color)}"></span>${esc(s.name)} &nbsp;<span style="color:var(--mute)">${s.start}–${s.end}</span></label>`)).join('');
+  $('dh').checked = !!e.holiday;
+  $('dlg').showModal();
+});
+$('dc').onclick = () => $('dlg').close();
+$('df').addEventListener('submit', () => {
+  const sel = document.querySelector('input[name=sh]:checked');
+  const v = { shift: sel && sel.value || null, holiday: $('dh').checked };
+  if (!v.shift && !v.holiday) delete S.days[activeKey]; else S.days[activeKey] = v;
+  save(); render();
+});
+$('prev').onclick = () => { view.setMonth(view.getMonth() - 1); render(); };
+$('next').onclick = () => { view.setMonth(view.getMonth() + 1); render(); };
+
+/* Tabs */
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  ['shifts','settings','backup'].forEach(t => $('t-' + t).hidden = t !== b.dataset.t);
+});
+
+/* Settings */
+[['r','rate'],['rn','night'],['rs','sun'],['rh','hol']].forEach(([id, f]) => $(id).addEventListener('input', () => {
+  const v = parseFloat($(id).value); S.settings[f] = isNaN(v) || v < 0 ? 0 : v; save(); render();
+}));
+$('bk').addEventListener('change', () => { S.settings.breakPaid = $('bk').value === 'paid'; save(); render(); });
+[['bp','breakPos']].forEach(([id, f]) => $(id).addEventListener('change', () => { S.settings[f] = $(id).value; save(); render(); }));
+
+/* Shift editor */
+let editing = null;
+function resetForm() { editing = null; $('sf').reset(); $('sc').value = '#0f766e'; $('sb').value = 30; $('sbtn').textContent = 'Add shift'; $('scancel').hidden = true; }
+$('scancel').onclick = resetForm;
+$('sf').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const o = { name: $('sn').value.trim(), color: $('sc').value, start: $('ss').value, end: $('se').value, brk: Math.max(0, parseInt($('sb').value) || 0) };
+  if (!o.name) return;
+  if (editing) Object.assign(S.shifts.find(s => s.id === editing), o);
+  else S.shifts.push({ id: 's' + Date.now(), ...o });
+  save(); resetForm(); render();
+});
+$('shiftList').addEventListener('click', ev => {
+  const ed = ev.target.dataset.edit, del = ev.target.dataset.del;
+  if (ed) {
+    const s = S.shifts.find(x => x.id === ed); editing = ed;
+    $('sn').value = s.name; $('sc').value = s.color; $('ss').value = s.start; $('se').value = s.end; $('sb').value = s.brk;
+    $('sbtn').textContent = 'Save changes'; $('scancel').hidden = false; $('sn').focus();
+  }
+  if (del && confirm('Delete this shift? Days using it will become days off.')) {
+    S.shifts = S.shifts.filter(s => s.id !== del);
+    for (const k in S.days) if (S.days[k].shift === del) { S.days[k].shift = null; if (!S.days[k].holiday) delete S.days[k]; }
+    save(); render();
+  }
+});
+
+/* Backup */
+$('exp').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' }));
+  a.download = `shifts-backup-${key(new Date())}.json`; a.click(); URL.revokeObjectURL(a.href);
+};
+$('imp').onclick = () => $('file').click();
+$('file').onchange = async () => {
+  const f = $('file').files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!d.settings || !Array.isArray(d.shifts) || typeof d.days !== 'object') throw 0;
+    if (!confirm('Replace all current data with this file?')) return;
+    S = { settings: { ...defaults().settings, ...d.settings }, shifts: d.shifts, days: d.days };
+    save(); render();
+  } catch (e) { alert('That file is not a valid shift backup.'); }
+  $('file').value = '';
+};
+
+/* Theme: auto / light / dark */
+const THEME_KEY = 'shiftTrackerTheme', modes = ['auto', 'light', 'dark'], icons = { auto: '◐ Auto', light: '☀ Light', dark: '☾ Dark' };
+let mode = 'auto'; try { mode = localStorage.getItem(THEME_KEY) || 'auto'; } catch (e) {}
+function applyTheme() {
+  const root = document.documentElement;
+  if (mode === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', mode);
+  $('theme').textContent = icons[mode];
+  const dark = mode === 'dark' || (mode === 'auto' && matchMedia('(prefers-color-scheme:dark)').matches);
+  document.querySelector('meta[name=theme-color]').content = dark ? '#14181d' : '#0f766e';
+}
+$('theme').onclick = () => { mode = modes[(modes.indexOf(mode) + 1) % 3]; try { localStorage.setItem(THEME_KEY, mode); } catch (e) {} applyTheme(); };
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change', applyTheme);
+applyTheme();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+render();
+</script>
+</body>
+</html>
